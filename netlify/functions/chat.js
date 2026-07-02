@@ -1,38 +1,41 @@
 exports.handler = async function(event) {
   try {
     if (event.httpMethod !== "POST") {
-  return {
-    statusCode: 405,
-    body: JSON.stringify({
-      reply: "Endpoint ini hanya menerima request POST."
-    })
-  };
-}
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ reply: "Endpoint ini hanya menerima request POST." })
+      };
+    }
 
-const { message } = JSON.parse(event.body || "{}");
+    const { message } = JSON.parse(event.body || "{}");
 
-if (!message) {
-  return {
-    statusCode: 400,
-    body: JSON.stringify({
-      reply: "Pesan belum dikirim."
-    })
-  };
-}
+    if (!message) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ reply: "Pesan belum dikirim." })
+      };
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ reply: "GEMINI_API_KEY belum terbaca di Netlify." })
+      };
+    }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
             {
               parts: [
                 {
-                  text: `Kamu adalah WriteHer AI, asisten ramah berbahasa Indonesia yang membantu perempuan mengeksplorasi peluang karier di bidang kepenulisan digital. Jawab dengan singkat, hangat, praktis, dan mudah dipahami.
+                  text: `Kamu adalah WriteHer AI. Jawab dalam Bahasa Indonesia dengan ramah, singkat, dan praktis.
 
 Pertanyaan pengguna:
 ${message}`
@@ -46,19 +49,26 @@ ${message}`
 
     const data = await response.json();
 
+    if (!response.ok) {
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({
+          reply: `Error Gemini: ${data.error?.message || "Tidak diketahui"}`
+        })
+      };
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({
-        reply:
-          data.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "Maaf, WriteHer AI belum bisa menjawab saat ini."
+        reply: data.candidates?.[0]?.content?.parts?.[0]?.text || "Tidak ada jawaban dari Gemini."
       })
     };
   } catch (error) {
     return {
       statusCode: 500,
       body: JSON.stringify({
-        reply: "Maaf, terjadi kesalahan pada WriteHer AI."
+        reply: `Error Function: ${error.message}`
       })
     };
   }
