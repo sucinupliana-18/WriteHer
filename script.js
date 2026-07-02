@@ -55,7 +55,7 @@ resetButton.addEventListener("click", () => {
 // Tanya ke backend Python
 // ===============================
 async function askGemini(question) {
-    const response = await fetch("http://127.0.0.1:5000/chat", {
+    const response = await fetch("/.netlify/functions/chat", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
