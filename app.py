@@ -37,12 +37,28 @@ Pertanyaan pengguna:
 """
 
     try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt
-        )
+        models = [
+            "gemini-2.0-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash-lite"
+        ]
 
-        jawaban = response.text
+        jawaban = None
+
+        for nama_model in models:
+            try:
+                response = client.models.generate_content(
+                    model=nama_model,
+                    contents=prompt
+                )
+                jawaban = response.text
+                break
+            except Exception as error_model:
+                print(f"Model {nama_model} gagal:")
+                print(error_model)
+
+        if jawaban is None:
+            jawaban = "Maaf, WriteHer AI sedang sibuk. Coba lagi beberapa saat lagi ya."
 
         return jsonify({
             "reply": jawaban
